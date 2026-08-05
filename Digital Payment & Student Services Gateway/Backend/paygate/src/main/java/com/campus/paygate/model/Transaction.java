@@ -16,7 +16,7 @@ public class Transaction {
     private String matricNo; 
     private String reference;
     
-    private Double amount;
+    private Long amount;
     private String description;
     private String status;
     private LocalDateTime transactionDate;
