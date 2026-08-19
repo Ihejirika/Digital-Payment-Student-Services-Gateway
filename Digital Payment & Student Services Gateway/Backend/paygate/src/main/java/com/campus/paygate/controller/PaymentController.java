@@ -32,6 +32,7 @@ public class PaymentController {
 
     @PostMapping("/initialize")
     public ResponseEntity<PaystackResponse> initializePayment(@RequestBody PaymentInitializationRequest request) {
+        System.out.println(">>> CONTROLLER HIT! Student Email: " + request.getEmail());
         PaystackResponse response = paystackService.initializePayment(request);
         return ResponseEntity.ok(response);
     }
@@ -43,7 +44,7 @@ public class PaymentController {
     }
 
     // NEW: Get history for a specific student
-    @GetMapping("/history/{matricNo}")
+    @GetMapping("/history/{matricNo}") 
     public ResponseEntity<List<Transaction>> getStudentHistory(@PathVariable String matricNo) {
         List<Transaction> history = transactionService.getStudentTransactions(matricNo);
         return ResponseEntity.ok(history);

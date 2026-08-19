@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campus.paygate.dto.AuthDTO;
+import com.campus.paygate.dto.RegisterRequest;
 import com.campus.paygate.model.User;
 import com.campus.paygate.repository.UserRepository;
 import com.campus.paygate.security.JwtTokenProvider;
@@ -29,16 +30,33 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        User savedUser = userRepository.save(user);
-        savedUser.setPassword(null);
-        return ResponseEntity.ok(savedUser);
+    public ResponseEntity<?> registerUser(@RequestBody RegisterRequest request) {
+        
+        // 1. Check if the matric number is already registered
+        if (userRepository.findUserByIdentifier(request.getMatricOrStaffId()).isPresent()) {
+            return ResponseEntity.badRequest().body("Error: Matriculation Number is already in use!");
+        }
+
+        // 2. Create the new user
+        User user = new User();
+        
+        // Ensure this setter matches your User.java model exactly! 
+        user.setMatricNo(request.getMatricOrStaffId()); 
+        user.setEmail(request.getEmail());
+        user.setRole("STUDENT"); // Default role
+        
+        // 3. Secure the password before saving
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        // 4. Save to MongoDB
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Student registered successfully!");
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthDTO.LoginRequest request) {
-        // Updated to match the new method name in the repository
+        
         User user = userRepository.findUserByIdentifier(request.getMatricOrStaffId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -48,7 +66,7 @@ public class AuthController {
 
         String identifier = user.getMatricNo() != null ? user.getMatricNo() : user.getStaffId();
         String token = tokenProvider.generateToken(identifier, user.getRole());
-        
+
         return ResponseEntity.ok(new AuthDTO.AuthResponse(token, identifier, user.getRole()));
     }
 }

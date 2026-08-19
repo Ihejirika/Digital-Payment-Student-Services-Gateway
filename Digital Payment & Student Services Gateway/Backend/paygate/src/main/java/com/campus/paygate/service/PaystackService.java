@@ -46,14 +46,26 @@ public class PaystackService {
 
         HttpEntity<PaymentInitializationRequest> entity = new HttpEntity<>(request, headers);
 
-        ResponseEntity<PaystackResponse> response = restTemplate.exchange(
+        // 1. Fetch the raw JSON String from Paystack instead of auto-converting
+        ResponseEntity<String> rawResponse = restTemplate.exchange(
                 paystackUrl,
                 HttpMethod.POST,
                 entity,
-                PaystackResponse.class
+                String.class
         );
+        
+        // 2. Print exactly what Paystack said to your Java terminal!
+        System.out.println("========== PAYSTACK RAW RESPONSE ==========");
+        System.out.println(rawResponse.getBody());
+        System.out.println("===========================================");
 
-        return response.getBody();
+        // 3. Try to convert it manually to catch the exact mapping error
+        try {
+            return objectMapper.readValue(rawResponse.getBody(), PaystackResponse.class);
+        } catch (Exception e) {
+            System.err.println("JACKSON MAPPING ERROR: " + e.getMessage());
+            return null; // This is what was causing the blank response in React!
+        }
     }
 
     public PaymentVerificationResponse verifyPayment(String reference) {
